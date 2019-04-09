@@ -1,0 +1,61 @@
+rm(list=ls())
+
+#plot
+
+f.fun = function(x){
+  exp(-x)+x^2
+}
+
+a = -2
+b = 5
+n = 100
+x.vec = a:b
+x.vec = seq(a,b,length.out = n)
+
+
+f.vec = rep(NA,n)
+for(i in 1:n){
+  f.vec[i] = f.fun(x.vec[i])
+}
+plot(x.vec,f.vec)
+
+#grid search
+a = -10; b = 20; n = 10
+iter.max = 1e+3; eps = 1e-10
+tr.vec = rep(NA,iter.max)
+for(j in 1:iter.max){
+  print(j) #
+  tr.vec[j] = f.fun(a) #trace
+  x.vec = a:b
+  x.vec = seq(a,b,length.out = n)
+  
+  f.vec = rep(NA,n)
+  for(i in 1:n){
+    f.vec[i] = f.fun(x.vec[i])
+  }
+  opt = which.min(f.vec)
+  a = x.vec[opt-1]
+  b = x.vec[opt+1] 
+  
+  if(b-a<eps) break
+}
+x.vec[opt]
+plot(tr.vec[10:j])
+
+############################################################################
+
+x_old = -10
+y_old = 10
+
+while(abs(x_old-y_old)>10e-7){
+  x.pos = seq(x_old,y_old,length.out = 10)
+  f.fun(x.pos)
+  opt = x.pos[which.min(f.fun(x.pos))]
+  
+  x_new = x.pos[which.min(f.fun(x.pos))-1]
+  y_new = x.pos[which.min(f.fun(x.pos))+1]
+  x_old = x_new
+  y_old = y_new
+}
+
+opt
