@@ -1,0 +1,42 @@
+rm(list=ls())
+#######################bisection algorithm###########################
+
+##F = cdf, f = pdf
+##G(lam) = F(b_lam)-F(a_lam)-alpha=0
+##Given, lam f(b_lam)=f(a_lam)=lambda
+lam = 0.2
+in.fun = function(lam,iter.max,eps){
+  a = 0 #mode
+  b = 10^7
+  for(i in 1:iter.max){
+    c = (a+b)/2
+    if(dnorm(c)-lam<0){b = c} else {a = c}
+    if(abs(a-b)<eps) break
+    }
+  return(b)
+}
+b = in.fun(lam=0.2,iter.max=1000,eps=1e-07)
+round(dnorm(b),1) == lam
+####################################################################
+
+out.fun = function(alpha,iter.max,eps){
+  a = 1e-10; b = dnorm(0)-1e-10
+  
+  for(iter in 1:iter.max){
+    c = (a+b)/2
+    b.lam  = in.fun(lam=c,iter.max,eps)
+    a.lam = -b.lam
+    
+    if(pnorm(b.lam)-pnorm(a.lam)-alpha<0){
+      b=c
+    } else {
+      a=c
+    }
+    if(abs(b-a)<eps) break
+  }
+  return(c(a.lam,b.lam))
+}
+
+#value
+a.vec = out.fun(alpha=0.9,iter.max=100,eps=1e-10)
+pnorm(a.vec[2])-pnorm(a.vec[1])
