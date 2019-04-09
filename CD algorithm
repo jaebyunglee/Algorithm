@@ -1,0 +1,62 @@
+###############################################################
+###################  CD algorithm  ############################
+###############################################################
+
+rm(list=ls())
+n = 100 ; p = 5 ; iter.max = 100 ; eps = 1e-7
+set.seed(1234)
+
+#linear regression
+x.mat = matrix(rnorm(n*p),n,p)
+b.vec = rep(1,p)
+y.vec = x.mat%*%b.vec + rnorm(n)
+
+for(iter in 1:iter.max){
+  ob.vec = b.vec
+  for(i in 1:p){
+    b.vec[i] = x.mat[,i]%*%(y.vec-x.mat[,-i]%*%b.vec[-i])/sum((x.mat[,i])^2) 
+    print(sum((y.vec-x.mat%*%b.vec)^2)) #loss
+  }
+  if(sum(abs(ob.vec-b.vec))<eps) break
+}
+b.vec
+
+################################### logistic ######################################################
+#logit regression
+set.seed(1234)
+n = 1000 ; p = 4 ; iter.max = 100 ; eps = 1e-7
+x.mat = matrix(rnorm(n*p),n,p)
+b.vec = rep(0,p)
+y.vec = x.mat%*%b.vec + rnorm(n)
+y.vec = y.vec>0
+
+
+####logistic loss
+loss.fun = function(y.vec,x.mat,b.vec){
+  xb.vec = x.mat%*%b.vec
+  -sum(y.vec*xb.vec)+sum(log(1+exp(xb.vec)))
+}
+
+
+####logistic CD algorithm
+for(iter in 1:iter.max){
+  ob.vec = b.vec
+  for(j in 1:p){
+    #golden section
+    a = -100; b = 100; lam = 0.6
+    for(iiter in 1:iter.max){
+      c = lam*a+(1-lam)*b
+      d = lam*b+(1-lam)*a
+      b.vec[j] = lam*a+(1-lam)*b; 
+      c.loss = loss.fun(y.vec,x.mat,b.vec) #compare c.loss with d.loss
+      b.vec[j] = lam*b+(1-lam)*a
+      d.loss = loss.fun(y.vec,x.mat,b.vec)
+      if(c.loss<d.loss){ b = d } else { a = c }
+      if(abs(a-b)<eps) break
+       }
+   
+    print(loss.fun(y.vec,x.mat,b.vec)) #loss
+  }
+  if(sum(abs(ob.vec-b.vec))<eps) break
+}
+b.vec
