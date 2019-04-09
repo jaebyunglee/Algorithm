@@ -1,0 +1,40 @@
+#################  Gamma  #####################
+rm(list=ls())
+
+in.left.fun = function(lam,iter.max,eps){
+  a = -1e+3 ; b = 0.9009 
+  for(i in 1:iter.max){
+    c = (a+b)/2
+    if(dgamma(c,shape=10)-lam<0){a=c} else {b=c}
+    if(abs(b-a)<eps) break
+  }
+  return(a)
+}
+
+in.right.fun = function(lam,iter.max,eps){
+  a = 0.9009  ; b = 1e+3 
+  for(i in 1:iter.max){
+    c = (a+b)/2
+    if(dgamma(c,shape=10)-lam<0){b=c} else {a=c}
+    if(abs(b-a)<eps) break
+  }
+  return(b)
+}
+
+
+out.fun = function(alpha,iter.max,eps){
+  a = 1e-07; b = 1 
+  for(i in 1:iter.max){
+    c = (a+b)/2 #lam
+    a.lam = in.left.fun(lam=c,iter.max=100,eps=1e-10)
+    b.lam = in.right.fun(lam=c,iter.max=100,eps=1e-10)
+    if((pgamma(b.lam,shape=10)-pgamma(a.lam,shape=10)-alpha)<0){b=c} else {a=c}
+    if(abs(a-b)<eps) break
+  }
+  return(c(a.lam,b.lam))
+}
+
+a.vec = out.fun(alpha=0.9,iter.max=100,eps=1e-10)
+pgamma(a.vec[2],shape=10)-pgamma(a.vec[1],shape=10)
+
+
