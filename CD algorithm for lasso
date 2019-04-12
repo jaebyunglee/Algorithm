@@ -11,6 +11,8 @@ lam = 10
 ### square loss 
 iter.max = 100; eps = 1e-7
 
+
+#linear regression with lasso
 for(iter in 1:iter.max){
   ob.vec = b.vec 
   for(j in 1:p){
