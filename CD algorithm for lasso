@@ -1,0 +1,28 @@
+rm(list=ls())
+
+n = 100; p = 40; x.mat = matrix(rnorm(n*p),ncol=p)
+b.vec = 1/(1:p); y.vec = x.mat%*%b.vec+rnorm(n)
+xy.df = as.data.frame(cbind(y.vec,x.mat))
+
+lm.fit = lm(V1~.,data=xy.df)
+summary(lm.fit)
+lam = 10
+
+### square loss 
+iter.max = 100; eps = 1e-7
+
+for(iter in 1:iter.max){
+  ob.vec = b.vec 
+  for(j in 1:p){
+    dn = sum(x.mat[,j]^2)
+    up = sum((y.vec-x.mat[,-j]%*%b.vec[-j])*x.mat[,j])
+   
+     if(abs(up/dn)<lam/sum((x.mat[,j])^2)/2){ b.vec[j] = 0 } else { 
+  b.vec[j] = sign(up/dn)*((abs(up/dn))- lam/sum((x.mat[,j])^2)/2) }
+    
+    print(sum((y.vec-x.mat%*%b.vec)^2))
+  }
+  if(sum(abs(ob.vec-b.vec))<eps) break 
+}
+
+b.vec
