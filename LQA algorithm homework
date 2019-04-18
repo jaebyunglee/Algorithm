@@ -1,0 +1,96 @@
+rm(list=ls())
+set.seed(1234)
+
+n = 100; p = 10
+x.mat = matrix(rnorm(n*p),ncol=p); b.vec = 1/(1:p)
+exb.vec = exp(drop(x.mat%*%b.vec));
+p.vec = exb.vec/(1+exb.vec)
+y.vec = rbinom(n,1,prob=p.vec)
+iter.max = 100;eps = 1e-10
+# n = 1000; p = 10
+# x.mat = matrix(rnorm(n*p),ncol=p); b.vec = 1/(1:p)
+# y.vec = x.mat%*%b.vec+rnorm(n)
+
+### loss calculation
+loss.fun=function(y.vec,x.mat,b.vec,family="binomial"){
+  xb.vec = drop(x.mat%*%b.vec)
+  exb.vec = exp(xb.vec)
+  if(family=="gaussian"){
+    ret = sum((y.vec-xb.vec)^2)
+  } 
+  if(family=="binomial"){
+    ret = sum(-y.vec*xb.vec+log(1+exb.vec))   
+  } 
+  if(family=="poisson"){
+    ret = sum(-y.vec*xb.vec+exp(xb.vec))
+  }
+  return(ret)
+}
+### gradient calculation
+grad.fun = function(y.vec,x.mat,b.vec,family="binomial"){
+  xb.vec = drop(x.mat%*%b.vec)
+  exb.vec = exp(xb.vec)
+  if(family=="gaussian"){
+    ret = -2*drop(t(x.mat)%*%(y.vec-xb.vec))
+  }
+  if(family=="binomial"){
+    p.vec = exb.vec/(1+exb.vec)
+    ret = drop(t(x.mat)%*%(p.vec-y.vec))
+  }
+  if(family=="poisson"){
+    ret = colSums(-y.vec*x.mat+x.mat*exb.vec)
+  }
+  return(ret)
+}
+
+### hessian calculation
+hess.fun = function(y.vec,x.mat,b.vec,family="binomial"){
+  xb.vec = drop(x.mat%*%b.vec)
+  exb.vec = exp(xb.vec)
+  if(family=="gaussian"){
+    ret = 2*t(x.mat)%*%x.mat 
+  }
+  if(family=="binomial"){
+    p.vec = exb.vec/(1+exb.vec)
+    ret = t(x.mat)%*%diag(p.vec*(1-p.vec))%*%x.mat
+  }
+  if(family=="poisson"){
+    ret = t(x.mat)%*%diag(exb.vec)%*%x.mat
+  }
+  return(ret)
+}
+
+
+### my function(home work)
+my.fun = function(A.mat,a.vec,b.vec,lam=1,eps = 1e-10,iter.max = 100){
+  ocb.vec = cb.vec = b.vec 
+  for(iiter in 1:iter.max){
+    for(j in 1:p){
+      a = A.mat[j,j]/2 
+      b = sum(A.mat[j,-j]*cb.vec[-j])+a.vec[j]-sum(A.mat[j,]*b.vec)
+      if(abs(b)<lam){ cb.vec[j] = 0
+      } else { cb.vec[j] = sign(-b)*(abs(b)-lam)/2/a } 
+    }
+    if(sum(abs(cb.vec-ocb.vec))<eps) break 
+    ocb.vec = cb.vec 
+  }
+  return(cb.vec)
+}
+
+
+
+
+### LQA algorithm for minimizing regression loss with lasso penalty
+b.vec = rep(0,p) #initial beta
+for(iter in 1:iter.max){
+  a.vec = grad.fun(y.vec,x.mat,b.vec,family = "binomial")
+  A.mat = hess.fun(y.vec,x.mat,b.vec,family = "binomial")
+  nb.vec = my.fun(A.mat,a.vec,b.vec)
+  if(sum(abs(b.vec-nb.vec))<eps)break
+  b.vec = nb.vec
+}
+b.vec
+
+
+
+
