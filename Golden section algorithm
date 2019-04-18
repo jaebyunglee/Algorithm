@@ -1,0 +1,27 @@
+rm(list=ls())
+
+#simple linear regression
+n = 100 ; p = 1 ; iter.max = 100 ; eps = 1e-7
+set.seed(1234)
+x.mat = matrix(rnorm(n*p),n,p)
+b.vec = rep(1,p)
+y.vec = x.mat%*%b.vec + rnorm(n)
+
+#loss function
+loss.fun = function(y.vec,x.mat,b.vec){
+  sum((y.vec-x.mat%*%b.vec)^2)
+}
+
+#golden section algorithm 
+a = -100; b = 100; lam = 0.6
+
+for(i in 1:iter.max){
+  c = a*lam+b*(1-lam)
+  c.loss = loss.fun(y.vec,x.mat,c)
+  d = a*(1-lam)+b*lam
+  d.loss = loss.fun(y.vec,x.mat,d)
+  print(c(c.loss,d.loss))
+  if(c.loss<d.loss){ b = d } else { a = c }
+  if(abs(a-b)<eps) break
+}
+a
