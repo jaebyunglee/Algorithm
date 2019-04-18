@@ -1,0 +1,93 @@
+
+###############################################################################
+##                       Newton Rhapson Algorithm                            ##
+###############################################################################
+
+### loss calculation
+loss.fun=function(y.vec,x.mat,b.vec,family="binomial"){
+  xb.vec = drop(x.mat%*%b.vec)
+  exb.vec = exp(xb.vec)
+  if(family=="gaussian"){
+    ret = sum((y.vec-xb.vec)^2)
+  } 
+  if(family=="binomial"){
+    ret = sum(-y.vec*xb.vec+log(1+exb.vec))   
+  } 
+  if(family=="poisson"){
+    ret = sum(-y.vec*xb.vec+exp(xb.vec))
+  }
+  return(ret)
+}
+
+### gradient calculation
+grad.fun = function(y.vec,x.mat,b.vec,family="binomial"){
+  xb.vec = drop(x.mat%*%b.vec)
+  exb.vec = exp(xb.vec)
+  if(family=="gaussian"){
+    ret = -2*drop(t(x.mat)%*%(y.vec-xb.vec))
+  }
+  if(family=="binomial"){
+    p.vec = exb.vec/(1+exb.vec)
+    ret = drop(t(x.mat)%*%(p.vec-y.vec))
+  }
+  if(family=="poisson"){
+    ret = colSums(-y.vec*x.mat+x.mat*exb.vec)
+  }
+  return(ret)
+}
+
+### hessian calculation
+hess.fun = function(y.vec,x.mat,b.vec,family="binomial"){
+  xb.vec = drop(x.mat%*%b.vec)
+  exb.vec = exp(xb.vec)
+  if(family=="gaussian"){
+    ret = 2*t(x.mat)%*%x.mat 
+  }
+  if(family=="binomial"){
+    p.vec = exb.vec/(1+exb.vec)
+    ret = t(x.mat)%*%diag(p.vec*(1-p.vec))%*%x.mat
+  }
+  if(family=="poisson"){
+    ret = t(x.mat)%*%diag(exb.vec)%*%x.mat
+  }
+  return(ret)
+}
+
+### b.vec calculation by Newton-Rhapson algorithm
+nr.fun = function(y.vec,x.mat,b.vec,eps=1e-10,iter.max=1e+3){
+  loss.vec = rep(0,iter.max)
+  for(iter in 1:iter.max){
+    loss.vec[iter] = loss.fun(y.vec,x.mat,b.vec)
+    nb.vec = b.vec-drop(solve(hess.fun(y.vec,x.mat,b.vec))%*%grad.fun(y.vec,x.mat,b.vec))
+    if(sum(abs(nb.vec-b.vec))<eps) break
+    if(max(abs(nb.vec))>100) break
+    b.vec = nb.vec
+  }
+  return(list(b.vec,loss.vec[1:iter]))
+}
+
+### logistic regression example
+
+## sample generation
+n = 10; p = 3
+x.mat = matrix(rnorm(n*p),n,p)
+tb.vec = 0.5*(-1)^(1:p)
+xb.mat = drop(x.mat%*%tb.vec)
+p.vec = exp(tb.vec)/(1+exp(tb.vec))
+y.vec = rbinom(n,1,prob=p.vec)
+
+b.vec = rep(0,p)
+
+## function check
+grad.fun(y.vec,x.mat,b.vec)
+hess.fun(y.vec,x.mat,b.vec)
+nr.fun(y.vec,x.mat,b.vec)
+## b.vec calucation
+opt.b.vec = nr.fun(y.vec,x.mat,b.vec)[[1]]
+
+
+
+
+
+
+
